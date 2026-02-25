@@ -79,6 +79,9 @@ export function layout(pageContent: string, options: {
             </div>
         </div>
 
+        <!-- WhatsApp Floating Widget -->
+        ${whatsappWidgetHTML()}
+
         <!-- Minimal JS for interactivity -->
         <script src="/static/app.js"></script>
     </body>
@@ -346,4 +349,74 @@ function menuPopupHTML() {
     </div>
 </div>
 </div>`;
+}
+
+function whatsappWidgetHTML() {
+  return `<div id="whatsapp-widget" class="whatsapp-widget-container">
+    <a href="https://wa.me/50662891096" target="_blank" rel="noopener noreferrer" aria-label="Chat on WhatsApp" class="whatsapp-widget-button">
+      <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" fill="none">
+        <path fill="#fff" d="M16.004 2.667A13.26 13.26 0 0 0 2.672 15.923a13.15 13.15 0 0 0 1.796 6.636L2.667 29.333l6.992-1.834A13.26 13.26 0 0 0 16.004 29.3 13.26 13.26 0 0 0 29.333 16.04 13.26 13.26 0 0 0 16.004 2.667Zm0 24.268a10.86 10.86 0 0 1-5.99-1.794l-.43-.254-4.453 1.168 1.188-4.34-.28-.443a10.86 10.86 0 0 1-1.667-5.789A10.91 10.91 0 0 1 15.288 4.62c.24-.003.479.008.716.028a10.91 10.91 0 0 1 10.196 10.88 10.91 10.91 0 0 1-10.196 11.407ZM22.82 18.96c-.37-.185-2.194-1.082-2.534-1.206-.34-.124-.588-.185-.835.186-.247.37-.958 1.206-1.175 1.453-.216.247-.432.278-.803.093-.37-.186-1.563-.576-2.978-1.838-1.1-.981-1.844-2.192-2.06-2.563-.216-.37-.023-.571.163-.755.167-.166.37-.432.556-.649.186-.216.247-.37.37-.617.124-.247.062-.463-.031-.649-.093-.185-.835-2.013-1.144-2.757-.301-.724-.607-.626-.835-.638l-.711-.012a1.364 1.364 0 0 0-.988.464c-.34.37-1.299 1.268-1.299 3.094s1.33 3.588 1.516 3.835c.186.247 2.617 3.994 6.34 5.601.886.382 1.577.61 2.116.782.889.282 1.699.242 2.338.147.713-.107 2.194-.897 2.503-1.762.309-.866.309-1.608.216-1.763-.093-.154-.34-.247-.711-.432Z"/>
+      </svg>
+    </a>
+  </div>
+  <style>
+    /* WhatsApp Widget - matches Lindy chat button positioning exactly */
+    .whatsapp-widget-container {
+      position: fixed;
+      margin: 0;
+      left: 2rem;
+      bottom: 10rem;
+      z-index: 999999;
+    }
+    .whatsapp-widget-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 56px;
+      height: 56px;
+      background-color: #25D366;
+      border-radius: 50%;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .whatsapp-widget-button:hover {
+      transform: scale(1.08);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+    }
+    .whatsapp-widget-button svg {
+      width: 32px;
+      height: 32px;
+    }
+    /* Desktop - RoomSingle page adjustments */
+    @media screen and (min-width: 1041px) {
+      body:has(.ohm-component-RoomSingle) .whatsapp-widget-container {
+        left: 25%;
+        bottom: 2rem;
+      }
+    }
+    @media screen and (min-width: 791px) and (max-width: 1040px) {
+      body:has(.ohm-component-RoomSingle) .whatsapp-widget-container {
+        left: 27%;
+        bottom: 3rem;
+      }
+    }
+    /* Mobile */
+    @media (max-width: 790px) {
+      .whatsapp-widget-container {
+        right: 1rem;
+        left: auto;
+        bottom: 4rem;
+      }
+      .whatsapp-widget-button {
+        width: 48px;
+        height: 48px;
+      }
+      .whatsapp-widget-button svg {
+        width: 28px;
+        height: 28px;
+      }
+    }
+  </style>`;
 }
