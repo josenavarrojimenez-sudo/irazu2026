@@ -22,6 +22,9 @@ export function layout(pageContent: string, options: {
         <!-- Anime.js for letter animations -->
         <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js"></script>
 
+        <!-- Lenis smooth scroll (Studio Freight) for horizontal scrolling -->
+        <script src="https://unpkg.com/lenis@1.1.18/dist/lenis.min.js"></script>
+
         <!-- Swiper.js -->
         <script src="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.js"></script>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css">
@@ -65,9 +68,9 @@ export function layout(pageContent: string, options: {
 
                 <div class="ohm-main-container">
                 ${pageContent}
-                </div>
 
                 ${footerHTML()}
+                </div>
 
             ${contactPopupHTML()}
             ${menuPopupHTML()}

@@ -1,8 +1,128 @@
 /**
  * Real Estate Abbey - Core JavaScript
  * Replicates the original site's animations, transitions, and interactivity
- * Uses: anime.js for letter animations, CSS classes for visibility states
+ * Uses: Lenis for horizontal scrolling, anime.js for letter animations, CSS classes for visibility states
  */
+
+// ==================== GLOBAL SCROLL CONTROLLER (like original class D) ====================
+var ScrollController = {
+  scrollContainer: null,
+  header: null,
+  lenis: null,
+  HEADER_OFFSET: 130,
+
+  init: function() {
+    this.scrollContainer = document.querySelector('.ohm-main-container');
+    this.header = document.querySelector('header');
+    
+    if (!this.scrollContainer) return;
+    
+    if (window.innerWidth >= 791) {
+      this.initializeLenis();
+      this.raf = this.raf.bind(this);
+      requestAnimationFrame(this.raf);
+      
+      // Handle native horizontal scroll from trackpad
+      var self = this;
+      window.addEventListener('wheel', function(e) {
+        if (self.scrollContainer) {
+          self.scrollContainer.scrollLeft += e.deltaX;
+        }
+      });
+      
+      this.addClickListenersToAnchors();
+    }
+  },
+
+  initializeLenis: function() {
+    if (typeof Lenis === 'undefined') return;
+    
+    var self = this;
+    this.lenis = new Lenis({
+      easing: function(e) { return e === 1 ? 1 : 1 - Math.pow(2, -10 * e); },
+      orientation: 'horizontal',
+      gestureOrientation: 'horizontal',
+      wrapper: this.scrollContainer
+    });
+    
+    this.lenis.on('scroll', function(e) {
+      if (self.header) {
+        if (e.animatedScroll > 2) {
+          self.header.classList.add('ohm-white-background');
+        } else {
+          self.header.classList.remove('ohm-white-background');
+        }
+      }
+    });
+    
+    window.lenis = this.lenis;
+  },
+
+  raf: function(time) {
+    if (this.lenis) {
+      this.lenis.raf(time);
+    }
+    requestAnimationFrame(this.raf);
+  },
+
+  reinitializeLenisAfterDelay: function(delay) {
+    var self = this;
+    setTimeout(function() {
+      if (window.innerWidth >= 791) {
+        self.initializeLenis();
+        self.addClickListenersToAnchors();
+      }
+    }, delay);
+  },
+
+  scrollToWithOffset: function(target, offset) {
+    var s = (offset !== null && offset !== undefined) ? offset : this.HEADER_OFFSET;
+    
+    if (typeof target === 'string') {
+      var el = document.querySelector(target);
+      if (el && this.lenis) {
+        var rect = el.getBoundingClientRect();
+        var scroll = this.lenis.scroll || 0;
+        var pos = rect.left + scroll - s - 20;
+        this.lenis.scrollTo(pos, {
+          duration: 1.2,
+          easing: function(h) { return 1 - Math.pow(1 - h, 3); }
+        });
+      }
+    } else if (target instanceof HTMLElement && this.lenis) {
+      var rect = target.getBoundingClientRect();
+      var scroll = this.lenis.scroll || 0;
+      var pos = rect.left + scroll - s - 20;
+      this.lenis.scrollTo(pos, {
+        duration: 1.2,
+        easing: function(a) { return 1 - Math.pow(1 - a, 3); }
+      });
+    }
+  },
+
+  addClickListenersToAnchors: function() {
+    var self = this;
+    document.querySelectorAll('a[href^="#"]').forEach(function(link) {
+      // Skip popup links
+      if (link.getAttribute('href').startsWith('#open-popup-')) return;
+      
+      link.addEventListener('click', function(e) {
+        e.preventDefault();
+        var href = link.getAttribute('href');
+        if (self.lenis && href) {
+          self.scrollToWithOffset(href);
+        }
+      });
+    });
+  },
+
+  destroy: function() {
+    if (this.lenis) {
+      this.lenis.destroy();
+    }
+    window.lenis = null;
+  }
+};
 
 // ==================== POPUP SYSTEM (uses 'active' class like original) ====================
 document.addEventListener('DOMContentLoaded', function() {
@@ -14,14 +134,12 @@ document.addEventListener('DOMContentLoaded', function() {
     var settings = {};
     try { settings = JSON.parse(popup.getAttribute('data-settings') || '{}'); } catch(e) {}
     
-    // Show backdrop
     if (settings.backdrop === 'backdrop-light') {
       document.getElementById('backdrop-light').classList.add('active');
     } else if (settings.backdrop === 'backdrop-dark') {
       document.getElementById('backdrop-dark').classList.add('active');
     }
     
-    // Disable scroll if needed
     if (settings.disable_scroll) {
       document.body.classList.add('noscroll');
     }
@@ -47,7 +165,6 @@ document.addEventListener('DOMContentLoaded', function() {
     popupStack = [];
   }
 
-  // Click to open popup
   document.addEventListener('click', function(e) {
     var link = e.target.closest('a[href^="#open-popup-"]');
     if (link) {
@@ -60,7 +177,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  // Click to close popup
   document.addEventListener('click', function(e) {
     if (e.target.classList.contains('popup-close')) {
       e.preventDefault();
@@ -71,25 +187,21 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  // Backdrop click to close
   document.querySelectorAll('.backdrop').forEach(function(backdrop) {
     backdrop.addEventListener('click', function() {
       closeAllPopups();
     });
   });
 
-  // ESC key to close
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
       closeAllPopups();
     }
   });
 
-  // Browser back button support
   window.addEventListener('popstate', function(e) {
     var state = e.state;
     if (state && state.popups) {
-      // Sync popups with state
       popupStack.forEach(function(id) {
         if (!state.popups.includes(id)) closePopup(id);
       });
@@ -98,7 +210,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  // ==================== INITIALIZE ANIMATIONS ====================
+  // ==================== INITIALIZE ALL ====================
+  ScrollController.init();
+  ScrollController.reinitializeLenisAfterDelay(2000);
+  
   initHeroMenu();
   initHeroImage();
   initHeader();
@@ -107,7 +222,7 @@ document.addEventListener('DOMContentLoaded', function() {
   initSwipers();
   initSmallTextSliders();
   initRoomsBlock();
-  initHorizontalScroll();
+  initScrollMore();
 });
 
 // ==================== HEADER VISIBILITY ====================
@@ -118,8 +233,7 @@ function initHeader() {
   var heroMenu = document.querySelector('.ohm-component-HeroMenu');
   
   if (heroMenu) {
-    // Homepage: header becomes visible after hero animation
-    // The heroMenu init handles this with a delay
+    // Homepage: header shown after hero animation (handled by initHeroMenu)
   } else {
     // Subpages: header becomes visible after a short delay
     var delay = window.innerWidth < 790 ? 0 : 200;
@@ -127,14 +241,17 @@ function initHeader() {
       header.classList.add('ohm-visible');
     }, delay);
     
-    // Add scroll listener for white background
-    window.addEventListener('scroll', function() {
-      if (window.scrollY > 0) {
-        header.classList.add('ohm-white-background');
-      } else {
-        header.classList.remove('ohm-white-background');
-      }
-    });
+    // On mobile, listen for vertical scroll for white background
+    if (window.innerWidth < 791) {
+      window.addEventListener('scroll', function() {
+        if (window.scrollY > 0) {
+          header.classList.add('ohm-white-background');
+        } else {
+          header.classList.remove('ohm-white-background');
+        }
+      });
+    }
+    // Desktop horizontal scroll handled by Lenis in ScrollController
   }
 }
 
@@ -146,7 +263,8 @@ function initFooter() {
   var heroMenu = document.querySelector('.ohm-component-HeroMenu');
   
   if (heroMenu) {
-    // Homepage: footer is hidden, shown by heroMenu init
+    // Homepage: footer hidden (it's the last horizontal section)
+    // Show after a delay since it's a flex child inside ohm-main-container
     footer.style.display = 'none';
     footer.classList.add('ohm-desktop-hidden');
   } else {
@@ -170,7 +288,6 @@ function initHeroMenu() {
   var animDelay = isMobile ? 300 : 600;
   var headerDelay = animDelay + 500;
   
-  // Hide footer during homepage animation
   if (footer) {
     footer.style.display = 'none';
     footer.classList.add('ohm-desktop-hidden');
@@ -199,7 +316,6 @@ function initHeroMenu() {
           delay: function(el, i) { return isMobile ? 500 + 50 * i : 1000 + 220 * i; }
         });
       } else {
-        // Fallback: just show all letters
         el.querySelectorAll('.letter').forEach(function(l) { l.style.opacity = 1; });
       }
     }, letterDelay);
@@ -277,23 +393,26 @@ function initHeroImage() {
   var headingWrapper = heroImage.querySelector('.ohm-hero-container .ohm-heading-wrapper');
   
   if (headingWrapper) {
-    // Letter animation for heading
-    var originalText = headingWrapper.textContent;
-    headingWrapper.innerHTML = originalText.replace(/\S+/g, function(word) {
-      return word.split('').map(function(letter, i, arr) {
-        var cls = i === arr.length - 1 ? 'letter last-letter' : 'letter';
-        return "<span class='" + cls + "'>" + letter + "</span>";
-      }).join('');
-    });
+    var headingEl = headingWrapper.querySelector('h1, h2, h3, h4, h5, h6, p');
+    if (headingEl) {
+      var originalText = headingEl.textContent;
+      headingEl.innerHTML = originalText.replace(/\S+/g, function(word) {
+        return word.split('').map(function(letter, i, arr) {
+          var cls = i === arr.length - 1 ? 'letter last-letter' : 'letter';
+          return "<span class='" + cls + "'>" + letter + "</span>";
+        }).join('');
+      });
+    }
     
     // Show heading and animate letters
     setTimeout(function() {
       headingWrapper.classList.add('ohm-visible');
       headingWrapper.classList.remove('ohm-desktop-hidden');
       
-      if (typeof anime !== 'undefined') {
+      var letters = headingWrapper.querySelectorAll('.letter');
+      if (typeof anime !== 'undefined' && letters.length > 0) {
         anime.timeline({ loop: false }).add({
-          targets: headingWrapper.querySelectorAll('.letter'),
+          targets: letters,
           translateX: [40, 0],
           translateZ: 0,
           opacity: [0, 1],
@@ -302,7 +421,7 @@ function initHeroImage() {
           delay: function(el, i) { return 500 + 30 * i; }
         });
       } else {
-        headingWrapper.querySelectorAll('.letter').forEach(function(l) {
+        letters.forEach(function(l) {
           l.style.opacity = 1;
           l.style.transform = 'translateX(0)';
         });
@@ -314,17 +433,40 @@ function initHeroImage() {
   setTimeout(function() {
     if (inner) inner.classList.add('ohm-animated');
   }, 900);
-  
-  // Scroll more button
-  var scrollMore = heroImage.querySelector('.ohm-scroll-more');
-  if (scrollMore) {
-    scrollMore.addEventListener('click', function(e) {
+}
+
+// ==================== SCROLL MORE BUTTONS ====================
+function initScrollMore() {
+  document.querySelectorAll('.ohm-scroll-more').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
       e.preventDefault();
-      var rect = scrollMore.getBoundingClientRect();
-      var scrollTarget = window.scrollY + rect.bottom;
-      window.scrollTo({ top: scrollTarget, behavior: 'smooth' });
+      
+      if (window.innerWidth >= 791 && ScrollController.lenis) {
+        // Desktop: horizontal scroll to next section
+        var section = btn.closest('section');
+        if (section) {
+          var nextSection = section.nextElementSibling;
+          if (nextSection) {
+            ScrollController.scrollToWithOffset(nextSection);
+          } else {
+            // Scroll a viewport width to the right
+            var scrollContainer = document.querySelector('.ohm-main-container');
+            if (scrollContainer) {
+              ScrollController.lenis.scrollTo(scrollContainer.scrollLeft + window.innerWidth, {
+                duration: 1.2,
+                easing: function(h) { return 1 - Math.pow(1 - h, 3); }
+              });
+            }
+          }
+        }
+      } else {
+        // Mobile: vertical scroll
+        var rect = btn.getBoundingClientRect();
+        var scrollTarget = window.scrollY + rect.bottom;
+        window.scrollTo({ top: scrollTarget, behavior: 'smooth' });
+      }
     });
-  }
+  });
 }
 
 // ==================== SWIPER INITIALIZATION ====================
@@ -334,7 +476,6 @@ function initSwipers() {
     return;
   }
   
-  // Initialize fade sliders
   document.querySelectorAll('.ohm-slider[data-initialized="false"]').forEach(function(el) {
     new Swiper(el, {
       loop: true,
@@ -406,12 +547,10 @@ function initMenuPopupAnimations() {
   var mainMenuPopup = document.querySelector('[data-blueprint="main_menu_popup"]');
   if (!mainMenuPopup) return;
   
-  // Watch for popup becoming active
   var observer = new MutationObserver(function(mutations) {
     mutations.forEach(function(mutation) {
       if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
         if (mainMenuPopup.classList.contains('active')) {
-          // Animate letters when menu opens
           setTimeout(function() {
             var letterContainers = mainMenuPopup.querySelectorAll('.letters');
             letterContainers.forEach(function(el) {
@@ -441,7 +580,6 @@ function initMenuPopupAnimations() {
   
   observer.observe(mainMenuPopup, { attributes: true, attributeFilter: ['class'] });
   
-  // Menu item hover effects
   var menuItems = mainMenuPopup.querySelectorAll('.ohm-menu-wrapper li');
   var menuWrapper = menuItems.length > 0 ? menuItems[0].parentElement : null;
   
@@ -468,29 +606,8 @@ function initMenuPopupAnimations() {
   }
 }
 
-// ==================== HORIZONTAL SCROLL (Lenis-like for desktop) ====================
-function initHorizontalScroll() {
-  if (window.innerWidth < 791) return;
-  
-  var mainContainer = document.querySelector('.ohm-main-container');
-  var header = document.querySelector('header');
-  if (!mainContainer) return;
-  
-  // Add scroll listener for header background change
-  if (header) {
-    mainContainer.addEventListener('scroll', function() {
-      if (mainContainer.scrollLeft > 2) {
-        header.classList.add('ohm-white-background');
-      } else {
-        header.classList.remove('ohm-white-background');
-      }
-    });
-  }
-}
-
 // ==================== ALPINE.JS COMPONENTS ====================
 document.addEventListener('alpine:init', function() {
-  // Header component
   Alpine.data('header', function() {
     return {
       scrolled: false,
@@ -498,7 +615,6 @@ document.addEventListener('alpine:init', function() {
     };
   });
 
-  // Hero Menu component (homepage)
   window.heroMenu = function() {
     return {
       activeIndex: null,
@@ -506,42 +622,36 @@ document.addEventListener('alpine:init', function() {
     };
   };
 
-  // Hero Image component (subpages)
   window.heroImage = function() {
     return {
       init: function() {}
     };
   };
 
-  // Small Text Slider component
   window.smallTextSlider = function() {
     return {
       init: function() {}
     };
   };
 
-  // Locations Overview component
   window.LocationsOverview = function() {
     return {
       init: function() {}
     };
   };
 
-  // Rooms Block component (offices)
   window.roomsBlock = function() {
     return {
       init: function() {}
     };
   };
 
-  // Contact Popup component
   Alpine.data('ContactPopup', function() {
     return {
       init: function() {}
     };
   });
 
-  // Footer component
   Alpine.data('footer', function() {
     return {
       init: function() {}
