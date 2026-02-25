@@ -1,10 +1,10 @@
 /**
  * Real Estate Abbey - Core JavaScript
  * Replicates the original site's animations, transitions, and interactivity
- * Uses: Lenis for horizontal scrolling, anime.js for letter animations, CSS classes for visibility states
+ * Uses: Lenis for smooth horizontal scrolling, anime.js for letter animations, CSS classes for visibility states
  */
 
-// ==================== GLOBAL SCROLL CONTROLLER (like original class D) ====================
+// ==================== GLOBAL SCROLL CONTROLLER (replicating original class D exactly) ====================
 var ScrollController = {
   scrollContainer: null,
   header: null,
@@ -14,38 +14,53 @@ var ScrollController = {
   init: function() {
     this.scrollContainer = document.querySelector('.ohm-main-container');
     this.header = document.querySelector('header');
-    
+
     if (!this.scrollContainer) return;
-    
+
     if (window.innerWidth >= 791) {
       this.initializeLenis();
       this.raf = this.raf.bind(this);
       requestAnimationFrame(this.raf);
-      
-      // Handle native horizontal scroll from trackpad
+
+      // Manual wheel handler: convert vertical scroll (deltaY) to horizontal scrollLeft
+      // AND forward native horizontal scroll (deltaX) — exactly like the original site
       var self = this;
+      var container = this.scrollContainer;
       window.addEventListener('wheel', function(e) {
-        if (self.scrollContainer) {
-          self.scrollContainer.scrollLeft += e.deltaX;
-        }
-      });
-      
+        // Prevent default vertical scrolling — we handle everything horizontally
+        e.preventDefault();
+        // Apply both deltaY and deltaX to horizontal scroll
+        // deltaY = mouse wheel / trackpad vertical = primary scroll gesture
+        // deltaX = trackpad horizontal swipe = secondary gesture
+        container.scrollLeft += (e.deltaY + e.deltaX);
+      }, { passive: false });
+
       this.addClickListenersToAnchors();
     }
   },
 
   initializeLenis: function() {
     if (typeof Lenis === 'undefined') return;
-    
+
+    // Destroy previous instance if reinitializing
+    if (this.lenis) {
+      this.lenis.destroy();
+    }
+
     var self = this;
+
+    // Initialize Lenis primarily for smooth scrollTo animations (anchor links, buttons)
+    // The actual wheel-to-horizontal conversion is handled by our manual wheel listener above
+    // We disable smoothWheel so Lenis doesn't fight with our manual handler
     this.lenis = new Lenis({
       easing: function(e) { return e === 1 ? 1 : 1 - Math.pow(2, -10 * e); },
       orientation: 'horizontal',
       gestureOrientation: 'vertical',
+      smoothWheel: false,
       wrapper: this.scrollContainer,
       content: this.scrollContainer
     });
-    
+
     this.lenis.on('scroll', function(e) {
       if (self.header) {
         if (e.animatedScroll > 2) {
@@ -55,7 +70,7 @@ var ScrollController = {
         }
       }
     });
-    
+
     window.lenis = this.lenis;
   },
 
@@ -78,12 +93,12 @@ var ScrollController = {
 
   scrollToWithOffset: function(target, offset) {
     var s = (offset !== null && offset !== undefined) ? offset : this.HEADER_OFFSET;
-    
+
     if (typeof target === 'string') {
       var el = document.querySelector(target);
       if (el && this.lenis) {
         var rect = el.getBoundingClientRect();
-        var scroll = this.lenis.scroll || 0;
+        var scroll = this.scrollContainer ? this.scrollContainer.scrollLeft : 0;
         var pos = rect.left + scroll - s - 20;
         this.lenis.scrollTo(pos, {
           duration: 1.2,
@@ -92,7 +107,7 @@ var ScrollController = {
       }
     } else if (target instanceof HTMLElement && this.lenis) {
       var rect = target.getBoundingClientRect();
-      var scroll = this.lenis.scroll || 0;
+      var scroll = this.scrollContainer ? this.scrollContainer.scrollLeft : 0;
       var pos = rect.left + scroll - s - 20;
       this.lenis.scrollTo(pos, {
         duration: 1.2,
@@ -106,7 +121,7 @@ var ScrollController = {
     document.querySelectorAll('a[href^="#"]').forEach(function(link) {
       // Skip popup links
       if (link.getAttribute('href').startsWith('#open-popup-')) return;
-      
+
       link.addEventListener('click', function(e) {
         e.preventDefault();
         var href = link.getAttribute('href');
@@ -115,6 +130,17 @@ var ScrollController = {
         }
       });
     });
+  },
+
+  handleSessionAnchor: function() {
+    var anchor = sessionStorage.getItem('nextPageAnchor');
+    if (anchor && document.querySelector(anchor)) {
+      sessionStorage.removeItem('nextPageAnchor');
+      var self = this;
+      setTimeout(function() {
+        self.scrollToWithOffset(anchor);
+      }, 500);
+    }
   },
 
   destroy: function() {
@@ -214,7 +240,21 @@ document.addEventListener('DOMContentLoaded', function() {
   // ==================== INITIALIZE ALL ====================
   ScrollController.init();
   ScrollController.reinitializeLenisAfterDelay(2000);
-  
+  ScrollController.handleSessionAnchor();
+
+  // Monitor horizontal scroll position for header background (backup for when Lenis smoothWheel is off)
+  var headerEl = document.querySelector('header');
+  var mainContainer = document.querySelector('.ohm-main-container');
+  if (headerEl && mainContainer && window.innerWidth >= 791) {
+    mainContainer.addEventListener('scroll', function() {
+      if (mainContainer.scrollLeft > 2) {
+        headerEl.classList.add('ohm-white-background');
+      } else {
+        headerEl.classList.remove('ohm-white-background');
+      }
+    });
+  }
+
   initHeroMenu();
   initHeroImage();
   initHeader();
