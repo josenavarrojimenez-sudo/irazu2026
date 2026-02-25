@@ -434,40 +434,47 @@ function initHeroImage() {
   var headingWrapper = heroImage.querySelector('.ohm-hero-container .ohm-heading-wrapper');
   
   if (headingWrapper) {
-    var headingEl = headingWrapper.querySelector('h1, h2, h3, h4, h5, h6, p');
-    if (headingEl) {
-      var originalText = headingEl.textContent;
-      headingEl.innerHTML = originalText.replace(/\S+/g, function(word) {
+    var isMobile = window.innerWidth < 790;
+    
+    if (isMobile) {
+      // Mobile: show heading text directly without letter animation
+      // This avoids the font-size compounding issue with .letter{5em} on small screens
+      headingWrapper.classList.add('ohm-visible');
+      headingWrapper.classList.remove('ohm-desktop-hidden');
+    } else {
+      // Desktop: match original site exactly - replace entire heading-wrapper innerHTML
+      // This puts .letter spans directly inside heading-wrapper (removes <p> tag)
+      headingWrapper.innerHTML = headingWrapper.textContent.replace(/\S+/g, function(word) {
         return word.split('').map(function(letter, i, arr) {
           var cls = i === arr.length - 1 ? 'letter last-letter' : 'letter';
           return "<span class='" + cls + "'>" + letter + "</span>";
         }).join('');
       });
-    }
-    
-    // Show heading and animate letters
-    setTimeout(function() {
-      headingWrapper.classList.add('ohm-visible');
-      headingWrapper.classList.remove('ohm-desktop-hidden');
       
-      var letters = headingWrapper.querySelectorAll('.letter');
-      if (typeof anime !== 'undefined' && letters.length > 0) {
-        anime.timeline({ loop: false }).add({
-          targets: letters,
-          translateX: [40, 0],
-          translateZ: 0,
-          opacity: [0, 1],
-          easing: 'easeOutExpo',
-          duration: 1900,
-          delay: function(el, i) { return 500 + 30 * i; }
-        });
-      } else {
-        letters.forEach(function(l) {
-          l.style.opacity = 1;
-          l.style.transform = 'translateX(0)';
-        });
-      }
-    }, 0);
+      // Show heading and animate letters
+      setTimeout(function() {
+        headingWrapper.classList.add('ohm-visible');
+        headingWrapper.classList.remove('ohm-desktop-hidden');
+        
+        var letters = headingWrapper.querySelectorAll('.letter');
+        if (typeof anime !== 'undefined' && letters.length > 0) {
+          anime.timeline({ loop: false }).add({
+            targets: letters,
+            translateX: [40, 0],
+            translateZ: 0,
+            opacity: [0, 1],
+            easing: 'easeOutExpo',
+            duration: 1900,
+            delay: function(el, i) { return 500 + 30 * i; }
+          });
+        } else {
+          letters.forEach(function(l) {
+            l.style.opacity = 1;
+            l.style.transform = 'translateX(0)';
+          });
+        }
+      }, 0);
+    }
   }
   
   // Remove black overlay
