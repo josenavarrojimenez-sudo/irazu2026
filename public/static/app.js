@@ -41,7 +41,7 @@ var ScrollController = {
     this.lenis = new Lenis({
       easing: function(e) { return e === 1 ? 1 : 1 - Math.pow(2, -10 * e); },
       orientation: 'horizontal',
-      gestureOrientation: 'horizontal',
+      gestureOrientation: 'both',
       wrapper: this.scrollContainer
     });
     
