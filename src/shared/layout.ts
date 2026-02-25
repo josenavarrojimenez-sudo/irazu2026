@@ -19,10 +19,12 @@ export function layout(pageContent: string, options: {
         <link rel="shortcut icon" href="/favicon.ico" />
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
 
+        <!-- Anime.js for letter animations -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js"></script>
+
         <!-- Swiper.js -->
-        <script async src="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.js"></script>
-        <link rel='preload' href='https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css' as='style' onload="this.onload=null;this.rel='stylesheet'">
-        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css"></noscript>
+        <script src="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.js"></script>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css">
 
         <!-- Main Stylesheets - self-hosted -->
         <link rel="stylesheet" href="/static/style.css" />
