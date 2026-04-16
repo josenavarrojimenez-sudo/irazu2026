@@ -9,3 +9,23 @@
     font-size: inherit !important;
   }
 }
+
+/* === Nambi Logo === */
+.nambi-logo{display:block;object-fit:contain;transition:filter .5s ease-in-out}
+
+/* Header desktop: blanco por defecto (fondo oscuro/imagen), negro al hacer scroll */
+.ohm-component-mainHeader .ohm-inner .ohm-bottom .nambi-logo--header-desktop{width:60px;height:60px;filter:invert(1)}
+.ohm-component-mainHeader.ohm-white-background .ohm-inner .ohm-bottom .nambi-logo--header-desktop{filter:invert(0)}
+
+/* Header móvil: aparece al hacer scroll sobre fondo claro → negro */
+.ohm-component-mainHeader .ohm-inner .ohm-middle-logo .nambi-logo--header-mobile{width:60px;height:60px;filter:invert(0)}
+
+/* Footer: fondo oscuro → blanco */
+.ohm-component-mainFooter .ohm-logo .nambi-logo--footer{width:83px;height:83px;filter:invert(1)}
+
+/* Popups de contacto y menú: fondo claro → negro */
+.nambi-logo--popup{width:83px;height:83px;filter:invert(0)}
+.nambi-logo--menu{width:100px;height:100px;filter:invert(0)}
+
+/* Logo hero home (móvil): fondo imagen oscura → blanco */
+.ohm-component-HeroMenu .ohm-bottom-logo .nambi-logo--hero{width:84px;height:84px;filter:invert(1)}
